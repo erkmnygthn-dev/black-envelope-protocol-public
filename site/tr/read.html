@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Black Envelope Protocol — Okuma</title>
+  <style>
+    body{margin:0;background:#070707;color:#eee;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{max-width:760px;margin:0 auto;padding:48px 20px}a{color:#fff}nav{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #333;padding-bottom:18px;margin-bottom:32px}p,li{color:#d0d0d0;line-height:1.75;font-size:1.07rem}h1{font-size:clamp(2rem,7vw,3.4rem);line-height:1.1}pre{overflow:auto;background:#101010;border:1px solid #333;border-radius:14px;padding:16px;line-height:1.55}.controls{border-top:1px solid #333;margin-top:40px;padding-top:20px}.status{color:#888;font-family:monospace}
+  </style>
+</head>
+<body>
+  <main>
+    <nav><a href="./">← Bölümler</a><a href="../">Dil seçimi</a></nav>
+    <p class="status" id="status">Kayıt yükleniyor...</p>
+    <article id="reader"></article>
+    <nav class="controls"><a id="prev" href="#">← Önceki</a><a href="./">Bölüm listesi</a><a id="next" href="#">Sonraki →</a></nav>
+  </main>
+  <script>
+    const chapters={
+      '001':{file:'../../books/book-01-the-blue-file/tr/chapter-001.md',prev:null,next:'002'},
+      '002':{file:'../../books/book-01-the-blue-file/tr/chapter-002.md',prev:'001',next:'003'},
+      '003':{file:'../../books/book-01-the-blue-file/tr/chapter-003.md',prev:'002',next:null}
+    };
+    function esc(s){return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}
+    function render(md){
+      const lines=md.split(/\r?\n/);let out=[],p=[],code=[],inCode=false;
+      function fp(){if(p.length){out.push('<p>'+esc(p.join(' '))+'</p>');p=[]}}
+      function fc(){out.push('<pre><code>'+esc(code.join('\n'))+'</code></pre>');code=[]}
+      for(const line of lines){
+        if(line.startsWith('```')){if(inCode){fc();inCode=false}else{fp();inCode=true}continue}
+        if(inCode){code.push(line);continue}
+        if(!line.trim()){fp();continue}
+        if(line.startsWith('# ')){fp();out.push('<h1>'+esc(line.slice(2))+'</h1>');continue}
+        if(line.startsWith('## ')){fp();out.push('<h2>'+esc(line.slice(3))+'</h2>');continue}
+        p.push(line.trim())
+      }
+      fp();return out.join('\n')
+    }
+    const id=new URLSearchParams(location.search).get('chapter')||'001';const ch=chapters[id]||chapters['001'];
+    fetch(ch.file,{cache:'no-store'}).then(r=>r.text()).then(t=>{reader.innerHTML=render(t);status.textContent='Kayıt yüklendi.'}).catch(e=>{reader.innerHTML='<p>Kayıt yüklenemedi.</p>';status.textContent=e.message});
+    if(ch.prev)prev.href='./read.html?chapter='+ch.prev;else prev.style.visibility='hidden';
+    if(ch.next)next.href='./read.html?chapter='+ch.next;else next.style.visibility='hidden';
+  </script>
+</body>
+</html>
